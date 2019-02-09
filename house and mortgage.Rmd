@@ -94,5 +94,7 @@ ggplot(tidydf, aes(x = year, y = avg_price_index, colour = region)) +
                              arrow = arrow(length = unit(0.03, "npc")))+
   annotate("rect", xmin = 2005, xmax = 2010, ymin = 0, ymax = Inf,
         alpha = .2, fill = "#0D4D00")
+
+ggsave("housing.png", width = 25, height = 15, units = "cm")
 ```
 
