@@ -3,4 +3,4 @@ Housing and Mortgage data
 
 
 
-![plot](tidytuesdaysubmissions/housing.png)
+![plot](https://raw.githubusercontent.com/meensrinivasan/projectname/tidytuesdaysubmissions/housing.png)
