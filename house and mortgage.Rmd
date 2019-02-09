@@ -1,0 +1,98 @@
+---
+title: "House and mortgage data"
+output: html_document
+---
+
+## Tidy Tuesday: Housing and Mortgage Data
+
+Aim- Plot Texas HPI as compared to average USA HPI over the years
+
+Load libraries
+```{r}
+library(tidyverse)
+```
+
+Load the dataset
+```{r}
+state_hpi <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-05/state_hpi.csv")
+```
+
+#### Examine and clean the dataset
+```{r pressure, echo=FALSE}
+head(state_hpi)
+
+# Filtering for states Texas and Newyork and calculating avg HPI per year
+tx_hpi <- state_hpi %>%
+  filter(state == "TX") %>%
+  select(-month)%>%
+  group_by(year) %>%
+  summarise(avg_price_index = mean(price_index),
+            us_avg_1 = mean(us_avg)) %>%
+  mutate(region = "TX")
+
+# Filtering only USA average
+us_year <- tx_hpi %>%
+  select(year, us_avg_1) %>%
+  mutate(region = "USA") %>%
+  rename(avg_price_index = us_avg_1)
+
+# creating a new dataset without the USA average HPI values
+tx_hpi2 <- tx_hpi %>%
+  select(-us_avg_1)
+
+# Joining them to form a tidy dataset
+tidydf <- union(tx_hpi2, us_year) %>%
+  arrange(region, year)
+
+```
+
+#### Plot
+##### Plot annotations added
+```{r}
+ggplot(tidydf, aes(x = year, y = avg_price_index, colour = region)) +
+  geom_line(size = 1) +
+  scale_colour_manual(name = "Region",
+                      values = c("#CC2200", "#000066"),
+                      labels = c("Texas", "USA")) +
+  labs(title="Housing Price Index by year",
+       subtitle = "Texas HPI did not rise steeply during the housing bubble/ economic recession",
+       x = "Year",
+       y = "Average Housing Price Index")+
+  theme_bw()+
+  theme(plot.title = element_text(size = 15),
+        plot.subtitle = element_text(size = 10),
+        legend.position = "none") +
+  geom_label(aes(x = 2007, y = 100, label = "Dip seen here"), 
+             hjust = 0, 
+             vjust = 0.5, 
+             lineheight = 0.8,
+             colour = "#00001A", 
+             fill = "white", 
+             label.size = NA, 
+             #family="Helvetica", 
+             size = 4)+
+  geom_label(aes(x = 2011, y = 175, label = "Texas"), 
+             hjust = 0, 
+             vjust = 0.5, 
+             colour = "#CC2200", 
+             fill = "white", 
+             label.size = NA, 
+             #family="Helvetica", 
+             size = 4) +
+  geom_label(aes(x = 2016, y = 150, label = "USA"), 
+             hjust = 0, 
+             vjust = 0.5, 
+             colour = "#000066", 
+             fill = "white", 
+             label.size = NA, 
+             #family="Helvetica", 
+             size = 4) +
+  geom_curve(aes(x = 2008, y = 110, xend = 2006, yend = 120), 
+                             colour = "#00001A", 
+                             size=0.5, 
+                             curvature = -0.2,
+                             arrow = arrow(length = unit(0.03, "npc")))+
+  annotate("rect", xmin = 2005, xmax = 2010, ymin = 0, ymax = Inf,
+        alpha = .2, fill = "#0D4D00")
+```
+
