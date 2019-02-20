@@ -1,0 +1,120 @@
+```{r}
+library(tidyverse)
+library(paletteer)
+library(gganimate)
+
+phd_field <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-02-19/phd_by_field.csv")
+
+# Citizenship dataframe
+df2 <- readxl::read_excel("sed17-sr-tab017.xlsx", skip = 3) %>%
+  rename(field_citizen = "Field of study and citizenship status",
+         `1987` = "1987.0",
+         `1992` = "1992.0",
+         `1997` = "1997.0",
+         `2002` = "2002.0",
+         `2007` = "2007.0",
+         `2012` = "2012.0",
+         `2017` = "2017.0") %>%
+  mutate(field = case_when(row_number() %in% 1:4 ~ "All fields",
+                           row_number() %in% 5:8 ~ "Life sciences",
+                           row_number() %in% 9:12 ~ "Physical sciences and earth sciences",
+         row_number() %in% 13:16 ~ "Mathematics and computer sciences",
+         row_number() %in% 17:20 ~ "Psychology and social sciences",
+         row_number() %in% 21:24 ~ "Engineering",
+         row_number() %in% 25:28 ~ "Education",
+         row_number() %in% 29:32 ~ "Humanities and arts",
+         row_number() %in% 33:36 ~ "Other")) %>%
+  group_by(field_citizen) %>%
+  gather(key = year, numbers, `1987`:`2017`, -field)
+
+# Some more data cleaning
+df3 <- df2 %>%
+  filter(field_citizen %in% c("U.S. citizen or permanent resident", "Temporary visa holder",
+                              "Unknown"))
+df4 <- df3 %>%
+  group_by(field, year) %>%
+  summarize(total = sum(numbers)) %>%
+  left_join(df3, by = c("year", "field")) %>%
+  mutate(pct_whole = numbers/total * 100) %>%
+  select(field, year, field_citizen, pct_whole) %>%
+  filter(field == "Engineering")
+
+# Plotting
+ggplot(df4, aes(field_citizen, pct_whole, fill = field_citizen)) +
+  geom_bar(stat = "identity")+
+  transition_time(as.integer(year)) +
+  ease_aes('quintic-in-out')+
+  labs(title = "Engineering PhDs by citizenship over the years",
+       subtitle = 'Year: {frame_time}',
+       x = "Citizenship status",
+       y = "Percentage of total of PhDs awarded")+
+  scale_fill_paletteer_d(LaCroixColoR, PassionFruit)+
+  scale_x_discrete(labels = c("Visa", "Citizen/ Permanent Resident", "Unknown"))+
+  theme_light()+
+  theme(legend.position = "none")+
+    theme(axis.text.x = element_text(size = 12, face = "bold"),
+      axis.text.y = element_text(size = 12, face = "bold"),
+      axis.title.y = element_text(size = 15, face = "bold"),
+      plot.subtitle = element_text(size = 13, hjust = 0.5, face = "bold"),
+      plot.title = element_text(size = 18, face = "bold", hjust = 0.5))
+```
+
+```{r}
+# Plotting gender differences in PhDs in STEM
+
+stem <- c("Life sciences", "Mathematics and computer sciences", "Engineering", "Physical sciences and earth sciences")
+
+gender <- readxl::read_excel("sed17-sr-tab014.xlsx", skip = 4) %>%
+  rename(field = "..1",
+         `1987_n` = "Number..2",
+         `1987` = "Percent..3",
+         `1992_n` = "Number..4",
+         `1992` ="Percent..5",
+         `1997_n` ="Number..6",
+         `1997` ="Percent..7",
+         `2002_n` ="Number..8",
+         `2002` ="Percent..9",
+         `2007_n` ="Number..10",
+         `2007` ="Percent..11",
+         `2012_n` ="Number..12",
+         `2012` ="Percent..13",
+         `2017_n` ="Number..14",
+         `2017` ="Percent..15") %>%
+  select(field, `1987`, `1992`, `1997`, `2002`, `2007`, `2012`, `2017`) %>%
+  mutate(field_main = case_when(row_number() %in% 1:3 ~ "All fields",
+                           row_number() %in% 4:6 ~ "Life sciences",
+                           row_number() %in% 7:9 ~ "Physical sciences and earth sciences",
+         row_number() %in% 10:12 ~ "Mathematics and computer sciences",
+         row_number() %in% 13:15 ~ "Psychology and social sciences",
+         row_number() %in% 16:18 ~ "Engineering",
+         row_number() %in% 19:21 ~ "Education",
+         row_number() %in% 22:24 ~ "Humanities and arts",
+         row_number() %in% 25:27 ~ "Other")) %>%
+  group_by(field) %>%
+  gather(key = year, numbers, `1987`:`2017`, -field_main) %>%
+  filter(field_main %in% stem) %>%
+  filter(field %in% c("Male", "Female")) 
+
+
+ggplot(gender, aes(field_main, numbers, fill = field))+
+  geom_bar(stat = "identity", position = "dodge") +
+  transition_time(as.integer(year)) +
+  ease_aes('quintic-in-out')+
+  labs(title = "STEM PhDs over the years by sex",
+       subtitle = 'Year: {frame_time}',
+       x = " ",
+       y = "Percentage of total of PhDs awarded")+
+  scale_fill_paletteer_d(rcartocolor, "Vivid", labels = c("Female", "Male"))+
+  scale_x_discrete(labels = c("Engineering", "Life Science", "Math and Computer Science", "Physical and Earth Science"))+
+  theme_light()+
+    theme(axis.text.x = element_text(size = 12, face = "bold"),
+      axis.text.y = element_text(size = 12, face = "bold"),
+      axis.title.y = element_text(size = 15, face = "bold"),
+      plot.subtitle = element_text(size = 13, hjust = 0.5, face = "bold"),
+      plot.title = element_text(size = 18, face = "bold", hjust = 0.5))+
+  coord_flip()+
+  guides(fill = guide_legend(title = "Sex"))
+
+
+```
+
