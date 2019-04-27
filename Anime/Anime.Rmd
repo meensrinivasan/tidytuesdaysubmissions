@@ -1,0 +1,93 @@
+```{r}
+library(tidyverse)
+library(paletteer)
+library(lubridate)
+```
+
+
+
+
+```{r}
+anime <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-04-23/tidy_anime.csv")
+```
+
+
+```{r}
+barchart_theme <-  theme(axis.text.y   = element_text(size=13, face="bold", colour = "black"),
+                  axis.text.x   = element_text(size=13, face="bold", colour = "black"),
+                  axis.title.x  = element_text(size=13, face="bold"),
+                  axis.title.y  = element_text(size=13, face = "bold"),
+                  panel.background = element_rect(fill = "white"),
+                  axis.ticks.length = unit(.25, "cm"),
+                  plot.title = element_text(lineheight=.8, face="bold", hjust = 0.5),
+                  plot.caption = element_text(size = 10),
+                  plot.subtitle = element_text(hjust = 0.5, size = 10),
+                  strip.background = element_rect(fill = "white"),
+                  strip.text = element_text(size = 18, hjust = 0, colour = "black", face ="bold"),
+                  legend.position = "none",
+                  legend.title = element_text(size = 13, face = "bold"),
+                  legend.text = element_text(size = 13),
+                  panel.border = element_rect(color = "black", fill = NA, size = 2),
+                  panel.grid.major.x = element_blank(),
+                  panel.grid.minor.x = element_blank(),
+                  panel.grid.major.y = element_line(colour = "grey60", linetype = "dashed"))
+  
+```
+
+```{r}
+anime2 <- anime %>%
+  group_by(animeID) %>%
+  select(name, title_english, type, source, genre, start_date, end_date, score, popularity, favorites) %>%
+  slice(1)
+  
+```
+```{r}
+anime3 <- anime2 %>%
+  group_by(genre) %>%
+  summarise(median_score = median(score)) %>%
+  na.omit() %>%
+  arrange(desc(median_score)) %>%
+  head(14)
+
+#   geom_errorbar(aes(ymin = pct_5, ymax = pct_97.5), col = "red")
+
+ggplot(anime3 , aes(x = median_score, y = reorder(genre, median_score), color = genre)) +
+  geom_segment(aes(yend = genre), xend = 0, color = "black", size = 1) +
+  geom_point(size = 8) +
+  scale_color_paletteer_d(package = "LaCroixColoR", palette = "paired") +
+  labs(x = "Median Score",
+       y = "",
+       title = "Highest scored Anime genres",
+       subtitle = "There was a genre called 'Dementia' in the dataset. Why?") +
+  barchart_theme
+
+ggsave("Highest scored.png", width = 10, height = 7, units = "in")
+
+```
+
+
+
+```{r}
+
+anime4 <- anime2 %>%
+  select(name, genre, start_date, score, popularity) %>%
+  mutate(year = year(start_date))%>%
+  group_by(year, genre) %>%
+  summarise(n = n()) %>%
+  na.omit() %>%
+  filter(genre %in% c("Kids", "Comedy", "Romance", "Action", "Adventure", "Dementia"))
+
+ggplot(anime4, aes(year, n, color = genre)) +
+  geom_point(size = 2.5) +
+  scale_color_paletteer_d(name = "Genre", package = "LaCroixColoR", palette = "PassionFruit")+
+  labs(x = "Year",
+       y = "Number of shows",
+       title = "Number of shows by genre.", 
+       subtitle = "Hmmm.. So they have few shows in the 'Dementia' genre. WHY?") +
+  barchart_theme +
+  theme(legend.position = "bottom")
+
+ggsave("genre year.png", width = 10, height = 7, units = "in")
+  
+```
+
