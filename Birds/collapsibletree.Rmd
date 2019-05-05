@@ -1,0 +1,38 @@
+```{r}
+library(tidyverse)
+library(here)
+library(collapsibleTree)
+library(r2d3)
+```
+
+
+
+```{r}
+clean_birds <- read_csv(here("bird_collisions.csv"))
+
+clean_birds2 <- clean_birds %>%
+  mutate_if(is.character, as.factor)
+
+str(clean_birds2)
+  
+```
+
+```{r}
+Chicago_birds <- clean_birds2 %>%
+  group_by(family, genus, species) %>% 
+  summarise(
+    n = n()) %>%
+  ungroup() 
+
+  
+image <- collapsibleTreeSummary(Chicago_birds, 
+    hierarchy = c("family", "genus", "species"),
+    attribute = "n",
+    nodeSize = "n",
+    fillFun = colorspace::terrain_hcl,
+    collapsed = FALSE
+  )
+
+save_d3_html(image, file = "image.html", selfcontained = FALSE)
+```
+
