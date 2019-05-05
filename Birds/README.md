@@ -1,2 +1,2 @@
 
-![Image](https://raw.githubusercontent.com/username/projectname/branch/path/to/img.png)
+![Image](https://github.com/meensrinivasan/tidytuesdaysubmissions/blob/master/Birds/image.html)
